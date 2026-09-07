@@ -1,0 +1,17 @@
+{
+  "name": "couples-coach",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "license": "UNLICENSED",
+  "description": "Week-0 scaffold",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node scripts/run-tests.mjs"
+  }
+}

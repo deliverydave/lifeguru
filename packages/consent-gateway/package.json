@@ -1,0 +1,13 @@
+{
+  "name": "@couples-coach/consent-gateway",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "node -e \"process.exit(0)\""
+  },
+  "dependencies": {
+    "@couples-coach/shared": "*"
+  }
+}
