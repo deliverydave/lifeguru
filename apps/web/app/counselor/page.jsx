@@ -5,6 +5,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 const API = process.env.NEXT_PUBLIC_API_URL || "";
 const DEFAULT_PERSON = process.env.NEXT_PUBLIC_DEV_PERSON_ID || "person_a";
 
+function sessionKey(personId) {
+  return `m0_session_${personId}`;
+}
+
 function formatMs(ms) {
   const total = Math.max(0, Math.floor(ms / 1000));
   const m = Math.floor(total / 60);
@@ -54,6 +58,9 @@ export default function CounselorPage() {
     setShareNote("");
     try {
       const created = await api("/v1/sessions", { method: "POST", personId: id });
+      if (typeof sessionStorage !== "undefined") {
+        sessionStorage.setItem(sessionKey(id), created.sessionId);
+      }
       setSession(created);
     } catch (err) {
       setError(err.message || "Could not start session. Is the API running on port 3001?");
@@ -63,7 +70,36 @@ export default function CounselorPage() {
   }, []);
 
   useEffect(() => {
-    startSession(personId);
+    let cancelled = false;
+    async function boot() {
+      setBusy(true);
+      setError("");
+      setShareNote("");
+      try {
+        const saved =
+          typeof sessionStorage !== "undefined" ? sessionStorage.getItem(sessionKey(personId)) : null;
+        if (saved) {
+          try {
+            const existing = await api(`/v1/sessions/${saved}`, { personId });
+            if (!cancelled) setSession(existing);
+            return;
+          } catch {
+            if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(sessionKey(personId));
+          }
+        }
+        if (!cancelled) await startSession(personId);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message || "Could not start session. Is the API running on port 3001?");
+        }
+      } finally {
+        if (!cancelled) setBusy(false);
+      }
+    }
+    boot();
+    return () => {
+      cancelled = true;
+    };
   }, [personId, startSession]);
 
   const elapsedMs = useMemo(() => {

@@ -56,6 +56,18 @@ test("mock counselor refuses to assemble partner-private bags", () => {
   );
 });
 
+test("advance (empty userText) uses the stage guide without repeating the last turn", () => {
+  const reply = mockCounselorReply({
+    rawBag: ownerBag({
+      stage: "IDENTIFY_CURRENT_ISSUE",
+      ownerTurns: [{ role: "user", text: "I felt tense at dinner" }],
+    }),
+    userText: "",
+  });
+  assert.equal(reply.includes("I hear you"), false);
+  assert.match(reply, /most present/i);
+});
+
 test("owner-only reply never contains partner store secrets", () => {
   const partnerSecret = "blue elephant hideout";
   const reply = mockCounselorReply({

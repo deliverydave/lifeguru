@@ -77,9 +77,10 @@ function lastOwnerUserText(context) {
 export function mockCounselorReply({ rawBag, userText = "", timer } = {}) {
   const context = buildCounselorContext(rawBag);
   const stage = context.stage || "CHECK_IN";
-  const asked = userText || lastOwnerUserText(context);
+  const asked = typeof userText === "string" ? userText : "";
+  const prior = lastOwnerUserText(context);
 
-  if (isPartnerExfilAttempt(asked)) {
+  if (isPartnerExfilAttempt(asked) || isPartnerExfilAttempt(prior)) {
     return SAFE_REFUSAL;
   }
 
