@@ -7,11 +7,13 @@
     "packages/*"
   ],
   "license": "UNLICENSED",
-  "description": "Week-0 scaffold",
+  "description": "Privacy-first couples coaching (M0 thin slice)",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "test": "node scripts/run-tests.mjs"
+    "test": "node scripts/run-tests.mjs",
+    "dev:api": "npm run dev -w @couples-coach/api",
+    "dev:web": "npm run dev -w @couples-coach/web"
   }
 }

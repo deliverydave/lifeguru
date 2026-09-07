@@ -24,7 +24,7 @@ Use the root package script named test (see package.json).
 
 ## Path
 
-/workspace/couples-coach
+/workspace (repo root). M0 thin slice: docs/M0.md — Week-0 files above are unchanged in role.
 
 ## File count
 

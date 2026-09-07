@@ -6,13 +6,14 @@
   "scripts": {
     "dev": "node --watch src/index.mjs",
     "start": "node src/index.mjs",
-    "test": "node -e \"process.exit(0)\""
+    "test": "node --test src/sessions.test.mjs"
   },
   "dependencies": {
     "express": "^4.21.0",
     "@couples-coach/shared": "*",
     "@couples-coach/context-builders": "*",
     "@couples-coach/consent-gateway": "*",
-    "@couples-coach/session-orchestrator": "*"
+    "@couples-coach/session-orchestrator": "*",
+    "@couples-coach/mock-counselor": "*"
   }
 }

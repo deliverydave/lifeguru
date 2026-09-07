@@ -1,5 +1,5 @@
 {
-  "name": "@couples-coach/session-orchestrator",
+  "name": "@couples-coach/mock-counselor",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,7 +9,6 @@
     "test": "node --test src/index.test.mjs"
   },
   "dependencies": {
-    "@couples-coach/shared": "*",
     "@couples-coach/context-builders": "*"
   }
 }

@@ -21,14 +21,31 @@ export const PARTNER_PRIVATE_FORBIDDEN = [
   "contributing_person_id",
 ] as const;
 
-export function assertNoPartnerPrivateFields(input: Record<string, unknown>): string[] {
+function isPartnerPrivateKey(key: string): boolean {
+  if ((PARTNER_PRIVATE_FORBIDDEN as readonly string[]).includes(key)) return true;
+  return /^partner/i.test(key);
+}
+
+/** Walk objects/arrays and collect partner-private keys (any `partner*` + denylist). */
+export function findPartnerPrivateKeys(input: unknown, path = ""): string[] {
   const hits: string[] = [];
-  for (const key of PARTNER_PRIVATE_FORBIDDEN) {
-    if (Object.prototype.hasOwnProperty.call(input, key) && input[key] !== undefined) {
-      hits.push(key);
-    }
+  if (input == null || typeof input !== "object") return hits;
+  if (Array.isArray(input)) {
+    input.forEach((item, i) => {
+      hits.push(...findPartnerPrivateKeys(item, path ? `${path}[${i}]` : `[${i}]`));
+    });
+    return hits;
+  }
+  for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
+    const here = path ? `${path}.${key}` : key;
+    if (isPartnerPrivateKey(key) && value !== undefined) hits.push(here);
+    hits.push(...findPartnerPrivateKeys(value, here));
   }
   return hits;
+}
+
+export function assertNoPartnerPrivateFields(input: Record<string, unknown>): string[] {
+  return findPartnerPrivateKeys(input);
 }
 
 export function pickAllowlistedContext(input: Record<string, unknown>): Record<string, unknown> {

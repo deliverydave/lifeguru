@@ -120,10 +120,11 @@ CREATE TABLE invite (
 -- Private tables (future) must use:
 --   USING (owner_person_id = auth.person_id());
 
--- Future private domain (not created in 0001):
+-- Future private domain (not created in 0001; M0 comments in 0002_private_session_m0.sql):
 --   PrivateSession(session_id, person_id, stage, retention_mode, ...);
 --   PrivateTurn / PrivateSummary
 --   MemoryItem(person_id, visibility DEFAULT PRIVATE, epistemic_type, ...);
+-- M0 runtime is in-memory; person_id on private_session must reference person.person_id.
 
 -- Future consent / shared (gateway sole writer from private):
 --   ConsentRecord(...);

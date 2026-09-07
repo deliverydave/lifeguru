@@ -9,6 +9,13 @@ function run(cmd, args) {
   if (r.status !== 0) process.exit(r.status || 1);
 }
 
-run("node", ["--test", "packages/context-builders/src/allowlist.test.mjs"]);
-run("node", ["--test", "scripts/banned-log-fields.test.mjs"]);
-console.log("all week-0 tests passed");
+run("node", [
+  "--test",
+  "packages/context-builders/src/allowlist.test.mjs",
+  "packages/context-builders/src/builder.test.mjs",
+  "packages/session-orchestrator/src/index.test.mjs",
+  "packages/mock-counselor/src/index.test.mjs",
+  "apps/api/src/sessions.test.mjs",
+  "scripts/banned-log-fields.test.mjs",
+]);
+console.log("all tests passed");
