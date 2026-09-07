@@ -38,6 +38,7 @@ npm run dev:web
 
 Open http://localhost:3000/counselor
 
+- Web is JS/JSX only (no `tsconfig.json`) so Next does not run the Week-0 TypeScript verify crash
 - **My Counselor** — stage indicator, turns, send box, mock replies, coaching disclaimer, Keep-private default
 - **Our Relationship** / **My Data** — stubs with working nav links
 - Dev `person_id`: `person_a` or `person_b` (header `X-Person-Id`). Cross-fetch is forbidden.
