@@ -3,7 +3,7 @@
  */
 import { randomUUID } from "node:crypto";
 import { assembleOwnerContext } from "@couples-coach/context-builders";
-import { mockCounselorReply } from "@couples-coach/mock-counselor";
+import { counselorReply } from "@couples-coach/mock-counselor";
 import { nextStage, sessionTimer, normalizeStage } from "@couples-coach/session-orchestrator";
 import { DEFAULT_SHARE_DECISION } from "@couples-coach/consent-gateway";
 
@@ -45,9 +45,10 @@ function ownerContextBag(store, session) {
   });
 }
 
-export function createSessionService(store) {
+export function createSessionService(store, options = {}) {
+  const reply = options.counselorReply || counselorReply;
   return {
-    createSession(personId) {
+    async createSession(personId) {
       store.ensurePerson(personId);
       store.ensureDemoRelationship();
       const startedAtMs = Date.now();
@@ -64,7 +65,7 @@ export function createSessionService(store) {
         turns: [],
       };
       const bag = ownerContextBag(store, session);
-      const opening = mockCounselorReply({ rawBag: bag, userText: "" });
+      const opening = await reply({ rawBag: bag, userText: "" });
       session.turns.push({
         turnId: randomUUID(),
         role: "assistant",
@@ -82,7 +83,7 @@ export function createSessionService(store) {
       return publicSession(session);
     },
 
-    addUserTurn(personId, sessionId, text) {
+    async addUserTurn(personId, sessionId, text) {
       if (typeof text !== "string" || !text.trim()) {
         const err = new Error("text is required");
         err.status = 400;
@@ -100,11 +101,11 @@ export function createSessionService(store) {
         createdAt: new Date(nowMs).toISOString(),
       });
       const bag = ownerContextBag(store, session);
-      const reply = mockCounselorReply({ rawBag: bag, userText: text.trim(), timer });
+      const assistantText = await reply({ rawBag: bag, userText: text.trim(), timer });
       const assistantTurn = {
         turnId: randomUUID(),
         role: "assistant",
-        text: reply,
+        text: assistantText,
         stage: session.stage,
         createdAt: new Date().toISOString(),
       };
@@ -117,14 +118,14 @@ export function createSessionService(store) {
       };
     },
 
-    advanceStage(personId, sessionId, event = "advance") {
+    async advanceStage(personId, sessionId, event = "advance") {
       const session = store.getSession(sessionId);
       assertOwner(session, personId);
       session.stage = nextStage(session.stage, event);
       session.stage = normalizeStage(session.stage);
       session.updatedAt = new Date().toISOString();
       const bag = ownerContextBag(store, session);
-      const reply = mockCounselorReply({
+      const assistantText = await reply({
         rawBag: bag,
         userText: "",
         timer: sessionTimer(session.startedAtMs, session.stage),
@@ -132,7 +133,7 @@ export function createSessionService(store) {
       session.turns.push({
         turnId: randomUUID(),
         role: "assistant",
-        text: reply,
+        text: assistantText,
         stage: session.stage,
         createdAt: session.updatedAt,
       });

@@ -1,8 +1,13 @@
 /**
- * Mock counselor — no OpenAI key, no live LLM.
- * Replies are built ONLY from allowlisted owner context.
+ * Counselor replies — Claude when ANTHROPIC_API_KEY is set, otherwise mock.
+ * Context is always assembled via the allowlisted builder.
  */
 import { buildCounselorContext } from "@couples-coach/context-builders";
+import { completeAnthropic } from "./anthropic.mjs";
+import { buildCounselorPrompt } from "./prompt.mjs";
+
+export { buildCounselorPrompt, STAGE_GOALS } from "./prompt.mjs";
+export { completeAnthropic, DEFAULT_ANTHROPIC_MODEL } from "./anthropic.mjs";
 
 const STAGE_PROMPTS = {
   START: "Welcome. This is a private coaching session. How would you like to begin?",
@@ -94,4 +99,36 @@ export function mockCounselorReply({ rawBag, userText = "", timer } = {}) {
       " We've passed the soft 20-minute mark. I'll finish this turn — sessions are not cut off mid-reply — and we can move toward a private summary when you are ready.";
   }
   return reply;
+}
+
+function hasAnthropicKey(apiKey) {
+  const key = apiKey !== undefined ? apiKey : process.env.ANTHROPIC_API_KEY;
+  return typeof key === "string" && key.trim().length > 0;
+}
+
+let warnedMissingKey = false;
+
+/**
+ * Prefer Claude when a key is present; otherwise mock. Never logs turn bodies.
+ */
+export async function counselorReply({ rawBag, userText = "", timer, apiKey, model, fetchImpl } = {}) {
+  const asked = typeof userText === "string" ? userText : "";
+  buildCounselorContext(rawBag);
+  if (isPartnerExfilAttempt(asked)) {
+    return SAFE_REFUSAL;
+  }
+  const prompt = buildCounselorPrompt({ rawBag, userText, timer });
+  if (!hasAnthropicKey(apiKey)) {
+    if (!warnedMissingKey) {
+      warnedMissingKey = true;
+      console.warn({ counselor: "mock", reason: "ANTHROPIC_API_KEY_missing" });
+    }
+    return mockCounselorReply({ rawBag, userText, timer });
+  }
+  return completeAnthropic({
+    prompt,
+    apiKey: (apiKey !== undefined ? apiKey : process.env.ANTHROPIC_API_KEY).trim(),
+    model,
+    fetchImpl,
+  });
 }

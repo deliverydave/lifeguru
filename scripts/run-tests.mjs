@@ -15,6 +15,8 @@ run("node", [
   "packages/context-builders/src/builder.test.mjs",
   "packages/session-orchestrator/src/index.test.mjs",
   "packages/mock-counselor/src/index.test.mjs",
+  "packages/mock-counselor/src/prompt.test.mjs",
+  "packages/mock-counselor/src/anthropic.test.mjs",
   "apps/api/src/sessions.test.mjs",
   "scripts/banned-log-fields.test.mjs",
 ]);

@@ -1,12 +1,15 @@
 import express from "express";
+import { loadLocalEnv } from "./env.mjs";
 import { createMemoryStore } from "./store.mjs";
 import { createSessionService } from "./session-service.mjs";
+
+loadLocalEnv();
 
 const port = Number(process.env.PORT || 3001);
 
 export function createApp(options = {}) {
   const store = options.store || createMemoryStore();
-  const sessions = createSessionService(store);
+  const sessions = createSessionService(store, options);
   const app = express();
 
   app.use(express.json({ limit: "32kb" }));
@@ -19,7 +22,13 @@ export function createApp(options = {}) {
   });
 
   app.get("/health", (_req, res) => {
-    res.json({ ok: true, service: "couples-coach-api", milestone: "M0" });
+    const hasKey = Boolean(process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY.trim());
+    res.json({
+      ok: true,
+      service: "couples-coach-api",
+      milestone: "M0",
+      counselor: hasKey ? "anthropic" : "mock",
+    });
   });
 
   function personIdFrom(req) {
@@ -32,10 +41,10 @@ export function createApp(options = {}) {
     return String(id).trim();
   }
 
-  app.post("/v1/sessions", (req, res, next) => {
+  app.post("/v1/sessions", async (req, res, next) => {
     try {
       const personId = personIdFrom(req);
-      const created = sessions.createSession(personId);
+      const created = await sessions.createSession(personId);
       res.status(201).json(created);
     } catch (err) {
       next(err);
@@ -51,21 +60,21 @@ export function createApp(options = {}) {
     }
   });
 
-  app.post("/v1/sessions/:sessionId/turns", (req, res, next) => {
+  app.post("/v1/sessions/:sessionId/turns", async (req, res, next) => {
     try {
       const personId = personIdFrom(req);
       const text = req.body && req.body.text;
-      res.json(sessions.addUserTurn(personId, req.params.sessionId, text));
+      res.json(await sessions.addUserTurn(personId, req.params.sessionId, text));
     } catch (err) {
       next(err);
     }
   });
 
-  app.post("/v1/sessions/:sessionId/advance", (req, res, next) => {
+  app.post("/v1/sessions/:sessionId/advance", async (req, res, next) => {
     try {
       const personId = personIdFrom(req);
       const event = (req.body && req.body.event) || "advance";
-      res.json(sessions.advanceStage(personId, req.params.sessionId, event));
+      res.json(await sessions.advanceStage(personId, req.params.sessionId, event));
     } catch (err) {
       next(err);
     }

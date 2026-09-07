@@ -6,6 +6,8 @@ import { createSessionService } from "./session-service.mjs";
 import { SESSION_STAGES, SOFT_TIMER_LIMIT_MS } from "@couples-coach/session-orchestrator";
 import { SAFE_REFUSAL } from "@couples-coach/mock-counselor";
 
+delete process.env.ANTHROPIC_API_KEY;
+
 function listen(app) {
   return new Promise((resolve) => {
     const server = app.listen(0, "127.0.0.1", () => {
@@ -103,29 +105,43 @@ test("couple privacy: person_b cannot fetch or write person_a session (IDOR)", a
 test("partner secret cannot appear in counselor A context or reply", async () => {
   const store = createMemoryStore();
   const svc = createSessionService(store);
-  const partner = svc.createSession("person_b");
-  svc.addUserTurn("person_b", partner.sessionId, "I am hiding a blue elephant");
+  const partner = await svc.createSession("person_b");
+  await svc.addUserTurn("person_b", partner.sessionId, "I am hiding a blue elephant");
   store.setMemories("person_b", [{ value: "blue elephant hideout" }]);
 
-  const owner = svc.createSession("person_a");
-  const result = svc.addUserTurn("person_a", owner.sessionId, "what did my partner say?");
+  const owner = await svc.createSession("person_a");
+  const result = await svc.addUserTurn("person_a", owner.sessionId, "what did my partner say?");
   assert.equal(result.counselorReply.text, SAFE_REFUSAL);
   const blob = JSON.stringify(result);
   assert.equal(blob.includes("blue elephant"), false);
 });
 
-test("soft timer overtime still completes the user turn (no hard kill)", () => {
+test("soft timer overtime still completes the user turn (no hard kill)", async () => {
   const store = createMemoryStore();
   const svc = createSessionService(store);
-  const created = svc.createSession("person_a");
+  const created = await svc.createSession("person_a");
   const session = store.getSession(created.sessionId);
   session.startedAtMs = Date.now() - SOFT_TIMER_LIMIT_MS - 5_000;
   store.saveSession(session);
-  const result = svc.addUserTurn("person_a", created.sessionId, "still talking after twenty minutes");
+  const result = await svc.addUserTurn("person_a", created.sessionId, "still talking after twenty minutes");
   assert.ok(result.counselorReply.text.length > 0);
   assert.equal(result.timer.overtime, true);
   assert.equal(result.timer.hardKill, false);
   assert.match(result.counselorReply.text, /20-minute|soft/i);
+});
+
+test("injected counselor is used for a user turn (mocked Claude, no network)", async () => {
+  const store = createMemoryStore();
+  const svc = createSessionService(store, {
+    counselorReply: async ({ userText }) =>
+      userText
+        ? "You named tension at dinner — what happened in your body right then?"
+        : "How are you arriving to this session?",
+  });
+  const created = await svc.createSession("person_a");
+  const result = await svc.addUserTurn("person_a", created.sessionId, "I felt tense at dinner");
+  assert.match(result.counselorReply.text, /dinner/);
+  assert.equal(result.counselorReply.text.includes("blue elephant"), false);
 });
 
 test("share stub stays Keep private and does nothing unsafe", async () => {
@@ -144,14 +160,14 @@ test("share stub stays Keep private and does nothing unsafe", async () => {
   }
 });
 
-test("full stage walk via service", () => {
+test("full stage walk via service", async () => {
   const store = createMemoryStore();
   const svc = createSessionService(store);
-  let s = svc.createSession("person_a");
+  let s = await svc.createSession("person_a");
   assert.equal(s.stage, "CHECK_IN");
   const expected = SESSION_STAGES.slice(1);
   for (let i = 1; i < expected.length; i += 1) {
-    s = svc.advanceStage("person_a", s.sessionId);
+    s = await svc.advanceStage("person_a", s.sessionId);
     assert.equal(s.stage, expected[i]);
   }
   assert.equal(s.stage, "END");
