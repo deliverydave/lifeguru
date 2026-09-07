@@ -1,7 +1,7 @@
 /**
  * Anthropic Messages API client. Never logs message / transcript / summary_text bodies.
  */
-export const DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-20250514";
+export const DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-5-20250929";
 export const ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages";
 export const ANTHROPIC_VERSION = "2023-06-01";
 

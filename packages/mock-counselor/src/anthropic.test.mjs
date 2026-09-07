@@ -108,11 +108,11 @@ test("ANTHROPIC_MODEL override is sent on the mocked request", async () => {
   await completeAnthropic({
     prompt,
     apiKey: "test-key",
-    model: "claude-sonnet-4-20250514",
+    model: "claude-test-override",
     fetchImpl: async (_url, init) => {
       model = JSON.parse(init.body).model;
       return { ok: true, status: 200, json: async () => ({ content: [{ type: "text", text: "Hello." }] }) };
     },
   });
-  assert.equal(model, "claude-sonnet-4-20250514");
+  assert.equal(model, "claude-test-override");
 });

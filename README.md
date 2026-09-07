@@ -31,8 +31,8 @@ npm install
 
 # Optional — real Claude replies (never commit this file)
 cp .env.example .env
-# set ANTHROPIC_API_KEY=sk-ant-...
-# optional: ANTHROPIC_MODEL=claude-sonnet-4-20250514
+# set ANTHROPIC_API_KEY= (your Anthropic key; never commit it)
+# optional: ANTHROPIC_MODEL=claude-sonnet-4-5-20250929
 
 # terminal 1 — in-memory session store (restart after changing the key)
 npm run dev:api
@@ -45,7 +45,7 @@ Open http://localhost:3000/counselor
 
 - With `ANTHROPIC_API_KEY` set and the API restarted, chat should respond to what you actually said (stage still owned by the orchestrator).
 - Without a key, `GET /health` shows `"counselor":"mock"` and replies stay local.
-- Default model: `claude-sonnet-4-20250514` (override with `ANTHROPIC_MODEL`)
+- Default model: `claude-sonnet-4-5-20250929` (override with `ANTHROPIC_MODEL`)
 - Every Claude call is built only from the owner allowlist. Partner-private fields never enter the prompt.
 - Web is JS/JSX only (no `tsconfig.json`) so Next does not run the Week-0 TypeScript verify crash
 - **My Counselor** — stage indicator, turns, send box, Claude or mock replies, coaching disclaimer, Keep-private default
