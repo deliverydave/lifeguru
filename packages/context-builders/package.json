@@ -3,9 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "src/index.ts",
+  "main": "src/index.mjs",
+  "exports": "./src/index.mjs",
   "scripts": {
-    "test": "node --test src/allowlist.test.mjs"
+    "test": "node --test src/allowlist.test.mjs src/builder.test.mjs"
   },
   "dependencies": {
     "@couples-coach/shared": "*"

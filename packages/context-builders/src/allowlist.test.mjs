@@ -25,6 +25,12 @@ test("allowlist rejects partnerMemories and partnerPrivateSummary", () => {
   assert.throws(() => pickAllowlistedContext(input));
 });
 
+test("allowlist rejects any partner* key", () => {
+  const input = { ownerPersonId: "person_a", partnerSecretNotes: "nope" };
+  assert.ok(assertNoPartnerPrivateFields(input).some((h) => /partnerSecretNotes/i.test(h)));
+  assert.throws(() => pickAllowlistedContext(input), /Partner-private fields rejected/);
+});
+
 test("allowlist keeps only owner fields", () => {
   const input = {
     ownerPersonId: "person_a",

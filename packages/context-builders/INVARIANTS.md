@@ -5,3 +5,4 @@
 3. Never query cross-person private repositories.
 4. Shared/JOINT artifacts must already be authorized.
 5. This package requires dual CODEOWNERS review.
+6. `buildCounselorContext` / `assembleOwnerContext` are the sole assemblers for counselor I/O.

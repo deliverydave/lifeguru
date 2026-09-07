@@ -1,0 +1,51 @@
+-- 0002_private_session_m0.sql
+-- M0 alignment notes. Runtime uses an in-memory (optional JSON file) store.
+-- Cloud SQL is out of scope for M0. Do not require this migration to demo.
+--
+-- Identity plane remains 0001:
+--   person(person_id)
+--   relationship(relationship_id)
+--   membership(relationship_id, person_id)
+--
+-- Private counseling rows are owner-scoped via person_id (never partner_id).
+-- Counselor A context is assembled only from the owner's private_session / private_turn.
+--
+-- M0 orchestrator stages ↔ 0001 session_stage enum:
+--   IDENTIFY_CURRENT_ISSUE     ↔ IDENTIFY_ISSUE
+--   IDENTIFY_UNDERLYING_NEED   ↔ IDENTIFY_NEED
+--   SEPARATE_OBSERVATION       ↔ OBS_VS_INTERP
+--   PERSPECTIVE_TAKING         ↔ PERSPECTIVE
+--   IDENTIFY_DESIRED_OUTCOME   ↔ DESIRED_OUTCOME
+--   IDENTIFY_CONTROLLABLE      ↔ CONTROLLABLES
+--   CHOOSE_SMALL_ACTION        ↔ SMALL_ACTION
+--   OPTIONAL_SHARING           ↔ SHARING_DECISION
+--   (WIND_DOWN / CORRECTIONS collapse into PRIVATE_SUMMARY for the M0 linear path)
+--
+-- Future ALTER (not applied in M0):
+-- ALTER TYPE session_stage ADD VALUE IF NOT EXISTS 'IDENTIFY_CURRENT_ISSUE';
+-- ALTER TYPE session_stage ADD VALUE IF NOT EXISTS 'IDENTIFY_UNDERLYING_NEED';
+-- ALTER TYPE session_stage ADD VALUE IF NOT EXISTS 'SEPARATE_OBSERVATION';
+-- ALTER TYPE session_stage ADD VALUE IF NOT EXISTS 'PERSPECTIVE_TAKING';
+-- ALTER TYPE session_stage ADD VALUE IF NOT EXISTS 'IDENTIFY_DESIRED_OUTCOME';
+-- ALTER TYPE session_stage ADD VALUE IF NOT EXISTS 'IDENTIFY_CONTROLLABLE';
+-- ALTER TYPE session_stage ADD VALUE IF NOT EXISTS 'CHOOSE_SMALL_ACTION';
+-- ALTER TYPE session_stage ADD VALUE IF NOT EXISTS 'OPTIONAL_SHARING';
+
+-- Future private domain (owner RLS: owner_person_id = auth.person_id())
+-- CREATE TABLE private_session (
+--   session_id UUID PRIMARY KEY,
+--   person_id UUID NOT NULL REFERENCES person(person_id),
+--   relationship_id UUID REFERENCES relationship(relationship_id),
+--   stage TEXT NOT NULL,
+--   started_at TIMESTAMPTZ NOT NULL,
+--   share_decision TEXT NOT NULL DEFAULT 'KEEP',
+--   -- summary_text / transcript live on child tables; never log those bodies
+-- );
+-- CREATE TABLE private_turn (
+--   turn_id UUID PRIMARY KEY,
+--   session_id UUID NOT NULL REFERENCES private_session(session_id),
+--   person_id UUID NOT NULL REFERENCES person(person_id),
+--   role TEXT NOT NULL,
+--   -- body stored here; logging of message/transcript/summary_text is forbidden
+--   created_at TIMESTAMPTZ NOT NULL
+-- );

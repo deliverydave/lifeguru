@@ -17,14 +17,31 @@ export const PARTNER_PRIVATE_FORBIDDEN = [
   "contributing_person_id",
 ];
 
-export function assertNoPartnerPrivateFields(input) {
+function isPartnerPrivateKey(key) {
+  if (PARTNER_PRIVATE_FORBIDDEN.includes(key)) return true;
+  return /^partner/i.test(key);
+}
+
+/** Walk objects/arrays and collect partner-private keys (any `partner*` + denylist). */
+export function findPartnerPrivateKeys(input, path = "") {
   const hits = [];
-  for (const key of PARTNER_PRIVATE_FORBIDDEN) {
-    if (Object.prototype.hasOwnProperty.call(input, key) && input[key] !== undefined) {
-      hits.push(key);
-    }
+  if (input == null || typeof input !== "object") return hits;
+  if (Array.isArray(input)) {
+    input.forEach((item, i) => {
+      hits.push(...findPartnerPrivateKeys(item, path ? `${path}[${i}]` : `[${i}]`));
+    });
+    return hits;
+  }
+  for (const [key, value] of Object.entries(input)) {
+    const here = path ? `${path}.${key}` : key;
+    if (isPartnerPrivateKey(key) && value !== undefined) hits.push(here);
+    hits.push(...findPartnerPrivateKeys(value, here));
   }
   return hits;
+}
+
+export function assertNoPartnerPrivateFields(input) {
+  return findPartnerPrivateKeys(input);
 }
 
 export function pickAllowlistedContext(input) {
