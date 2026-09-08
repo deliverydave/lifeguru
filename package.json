@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "license": "UNLICENSED",
-  "description": "Privacy-first couples coaching (M0 thin slice)",
+  "description": "Privacy-first couples coaching (M1 auth + relationship linking)",
   "engines": {
     "node": ">=20"
   },

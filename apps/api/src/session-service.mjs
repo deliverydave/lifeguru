@@ -50,12 +50,17 @@ export function createSessionService(store, options = {}) {
   return {
     async createSession(personId) {
       store.ensurePerson(personId);
-      store.ensureDemoRelationship();
+      const membership = store.activeMembershipFor(personId);
+      if (!membership) {
+        const err = new Error("Active relationship membership required");
+        err.status = 409;
+        throw err;
+      }
       const startedAtMs = Date.now();
       const session = {
         sessionId: randomUUID(),
         personId,
-        relationshipId: "rel_demo",
+        relationshipId: membership.relationshipId,
         stage: nextStage("START", "session_created"),
         startedAtMs,
         startedAt: new Date(startedAtMs).toISOString(),
