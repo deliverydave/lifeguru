@@ -9,6 +9,6 @@ Use Clerk as the identity provider for MVP (MFA, invite-friendly, OIDC to API).
 
 ## Consequences
 
-- Webhook user.created provisions Person + Map
+- Webhook user.created provisions Person + Map (also provisioned on first authenticated request)
 - Opaque person_id in counseling domain
-- Env examples only in Week-0; no live integration yet
+- M1 implements Clerk JWT verification in `apps/api` and Clerk.js UI in `apps/web` (see [docs/M1.md](../M1.md))

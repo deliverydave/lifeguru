@@ -1,12 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useApi } from "../../lib/use-api";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "";
-const DEFAULT_PERSON = process.env.NEXT_PUBLIC_DEV_PERSON_ID || "person_a";
-
-function sessionKey(personId) {
-  return `m0_session_${personId}`;
+function sessionKey(personKey) {
+  return `m1_session_${personKey}`;
 }
 
 function formatMs(ms) {
@@ -16,25 +14,9 @@ function formatMs(ms) {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-async function api(path, { method = "GET", personId, body } = {}) {
-  const headers = { "X-Person-Id": personId };
-  if (body !== undefined) headers["Content-Type"] = "application/json";
-  const res = await fetch(`${API}${path}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const err = new Error(data.error || `Request failed (${res.status})`);
-    err.status = res.status;
-    throw err;
-  }
-  return data;
-}
-
 export default function CounselorPage() {
-  const [personId, setPersonId] = useState(DEFAULT_PERSON);
+  const { call, auth } = useApi();
+  const [me, setMe] = useState(null);
   const [session, setSession] = useState(null);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -42,6 +24,7 @@ export default function CounselorPage() {
   const [shareNote, setShareNote] = useState("");
   const [now, setNow] = useState(Date.now());
   const listRef = useRef(null);
+  const identityKey = auth.mode === "bypass" ? auth.personId : "clerk";
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -52,14 +35,14 @@ export default function CounselorPage() {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
   }, [session]);
 
-  const startSession = useCallback(async (id) => {
+  const startSession = useCallback(async () => {
     setBusy(true);
     setError("");
     setShareNote("");
     try {
-      const created = await api("/v1/sessions", { method: "POST", personId: id });
+      const created = await call("/v1/sessions", { method: "POST", body: {} });
       if (typeof sessionStorage !== "undefined") {
-        sessionStorage.setItem(sessionKey(id), created.sessionId);
+        sessionStorage.setItem(sessionKey(identityKey), created.sessionId);
       }
       setSession(created);
     } catch (err) {
@@ -67,27 +50,33 @@ export default function CounselorPage() {
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [call, identityKey]);
 
   useEffect(() => {
+    if (!auth.isLoaded || !auth.isSignedIn) return;
     let cancelled = false;
     async function boot() {
       setBusy(true);
       setError("");
       setShareNote("");
+      setSession(null);
       try {
+        const profile = await call("/v1/me");
+        if (cancelled) return;
+        setMe(profile);
+        if (!profile.disclaimers.complete || !profile.relationship) return;
         const saved =
-          typeof sessionStorage !== "undefined" ? sessionStorage.getItem(sessionKey(personId)) : null;
+          typeof sessionStorage !== "undefined" ? sessionStorage.getItem(sessionKey(identityKey)) : null;
         if (saved) {
           try {
-            const existing = await api(`/v1/sessions/${saved}`, { personId });
+            const existing = await call(`/v1/sessions/${saved}`);
             if (!cancelled) setSession(existing);
             return;
           } catch {
-            if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(sessionKey(personId));
+            if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(sessionKey(identityKey));
           }
         }
-        if (!cancelled) await startSession(personId);
+        if (!cancelled) await startSession();
       } catch (err) {
         if (!cancelled) {
           setError(err.message || "Could not start session. Is the API running on port 3001?");
@@ -100,7 +89,7 @@ export default function CounselorPage() {
     return () => {
       cancelled = true;
     };
-  }, [personId, startSession]);
+  }, [auth.isLoaded, auth.isSignedIn, auth.personId, call, identityKey, startSession]);
 
   const elapsedMs = useMemo(() => {
     if (!session) return 0;
@@ -115,9 +104,8 @@ export default function CounselorPage() {
     setBusy(true);
     setError("");
     try {
-      const next = await api(`/v1/sessions/${session.sessionId}/turns`, {
+      const next = await call(`/v1/sessions/${session.sessionId}/turns`, {
         method: "POST",
-        personId,
         body: { text: draft.trim() },
       });
       setSession(next);
@@ -134,9 +122,8 @@ export default function CounselorPage() {
     setBusy(true);
     setError("");
     try {
-      const next = await api(`/v1/sessions/${session.sessionId}/advance`, {
+      const next = await call(`/v1/sessions/${session.sessionId}/advance`, {
         method: "POST",
-        personId,
         body: { event: "advance" },
       });
       setSession(next);
@@ -150,10 +137,7 @@ export default function CounselorPage() {
   async function shareStub() {
     if (!session || busy) return;
     try {
-      const result = await api(`/v1/sessions/${session.sessionId}/share`, {
-        method: "POST",
-        personId,
-      });
+      const result = await call(`/v1/sessions/${session.sessionId}/share`, { method: "POST", body: {} });
       setShareNote(`${result.note} Decision remains ${result.decision}.`);
     } catch (err) {
       setError(err.message || "Share stub failed");
@@ -162,6 +146,35 @@ export default function CounselorPage() {
 
   const stage = session ? session.stage : "…";
   const overtime = session && session.timer && session.timer.overtime;
+  const rel = me && me.relationship;
+
+  if (me && !me.disclaimers.complete) {
+    return (
+      <section>
+        <h1>My Counselor</h1>
+        <p>
+          Accept the privacy explainer and coaching-not-therapy disclaimer first.{" "}
+          <a href="/onboarding">Go to onboarding</a>
+        </p>
+      </section>
+    );
+  }
+
+  if (me && !rel) {
+    return (
+      <section>
+        <h1>My Counselor</h1>
+        <p style={{ background: "#fff6d8", border: "1px solid #e6d48a", padding: "10px 12px", borderRadius: 8 }}>
+          Reminder: this is AI coaching, not therapy. If you are in immediate danger, contact local emergency
+          services.
+        </p>
+        <p>
+          Create or join a relationship before starting a private session.{" "}
+          <a href="/relationship">Our Relationship</a> · <a href="/join">Have an invite?</a>
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section>
@@ -171,18 +184,14 @@ export default function CounselorPage() {
         services.
       </p>
 
+      {rel && (
+        <p style={{ background: "#fff", border: "1px solid #ddd", padding: "10px 12px", borderRadius: 8 }}>
+          You are in relationship <code>{rel.relationshipId}</code> ({rel.status}, {rel.memberCount} member
+          {rel.memberCount === 1 ? "" : "s"}). Partner private data never appears here.
+        </p>
+      )}
+
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", margin: "12px 0" }}>
-        <label>
-          Dev person_id{" "}
-          <select
-            value={personId}
-            onChange={(e) => setPersonId(e.target.value)}
-            style={{ marginLeft: 6 }}
-          >
-            <option value="person_a">person_a</option>
-            <option value="person_b">person_b</option>
-          </select>
-        </label>
         <span>
           Stage: <strong>{stage}</strong>
         </span>
@@ -232,7 +241,7 @@ export default function CounselorPage() {
             </div>
           </div>
         ))}
-        {!session && !error && <p>Starting a private session…</p>}
+        {!session && !error && rel && <p>Starting a private session…</p>}
       </div>
 
       <form onSubmit={sendTurn} style={{ display: "flex", gap: 8, marginTop: 12 }}>
@@ -252,7 +261,7 @@ export default function CounselorPage() {
         <button type="button" onClick={advance} disabled={busy || !session || stage === "END"}>
           Next stage
         </button>
-        <button type="button" onClick={() => startSession(personId)} disabled={busy}>
+        <button type="button" onClick={() => startSession()} disabled={busy || !rel}>
           New session
         </button>
         <button type="button" onClick={shareStub} disabled={!session}>

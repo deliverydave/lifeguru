@@ -18,6 +18,9 @@ run("node", [
   "packages/mock-counselor/src/prompt.test.mjs",
   "packages/mock-counselor/src/anthropic.test.mjs",
   "apps/api/src/sessions.test.mjs",
+  "apps/api/src/auth.test.mjs",
+  "apps/api/src/invites.test.mjs",
+  "apps/api/src/scoping.test.mjs",
   "scripts/banned-log-fields.test.mjs",
 ]);
 console.log("all tests passed");
