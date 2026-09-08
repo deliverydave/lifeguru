@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useApi } from "../../lib/use-api";
+import { useApi } from "@/lib/use-api";
 
 export default function DataPage() {
   const { call, auth } = useApi();

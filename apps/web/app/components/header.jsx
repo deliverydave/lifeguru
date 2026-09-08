@@ -1,8 +1,8 @@
 "use client";
 
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
-import { useAppAuth } from "../lib/auth-context";
-import { clerkEnabled } from "../lib/config";
+import { useAppAuth } from "@/lib/auth-context";
+import { clerkEnabled } from "@/lib/config";
 
 const nav = [
   { href: "/counselor", label: "My Counselor" },

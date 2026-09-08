@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { useApi } from "../../lib/use-api";
+import { useApi } from "@/lib/use-api";
 
 function JoinInner() {
   const { call, auth } = useApi();
@@ -40,7 +40,7 @@ function JoinInner() {
           router.replace("/onboarding");
           return;
         }
-        const looked = await call(`/v1/invites/lookup?token=${encodeURIComponent(token)}`);
+        const looked = await call(`/v1/invites/lookup`, { method: "POST", body: { token } });
         if (!cancelled) setInfo(looked);
       } catch (err) {
         if (!cancelled) setError(err.message || "Invite is not valid");

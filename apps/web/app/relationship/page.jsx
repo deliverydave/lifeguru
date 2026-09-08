@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useApi } from "../../lib/use-api";
+import { useApi } from "@/lib/use-api";
 
 export default function RelationshipPage() {
   const { call, auth } = useApi();
@@ -105,13 +105,24 @@ export default function RelationshipPage() {
         </div>
       )}
       {invite && (
-        <p>
-          Invite (one-time, expires {new Date(invite.expiresAt).toLocaleString()}):{" "}
-          <code>{invite.url}</code>{" "}
+        <div style={{ marginTop: 12 }}>
+          <p>
+            Invite is one-time and expires {new Date(invite.expiresAt).toLocaleString()}. Generating a new link
+            invalidates the previous one.
+          </p>
+          <p>
+            <input
+              readOnly
+              value={invite.url}
+              aria-label="Invite link"
+              style={{ width: "100%", padding: 8, fontFamily: "monospace", fontSize: 13 }}
+              onFocus={(e) => e.target.select()}
+            />
+          </p>
           <button type="button" onClick={copyLink}>
             {copied ? "Copied" : "Copy invite link"}
           </button>
-        </p>
+        </div>
       )}
       {error && <p style={{ color: "#8a1f1f" }}>{error}</p>}
     </section>

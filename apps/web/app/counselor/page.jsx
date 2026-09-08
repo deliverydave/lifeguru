@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useApi } from "../../lib/use-api";
+import { useApi } from "@/lib/use-api";
 
 function sessionKey(personKey) {
   return `m1_session_${personKey}`;

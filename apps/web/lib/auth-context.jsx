@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { authMode } from "./config";
+import { authMode } from "@/lib/config";
 
 const AuthContext = createContext(null);
 const BYPASS_KEY = "m1_dev_person";

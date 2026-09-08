@@ -51,6 +51,14 @@ test("create relationship + invite; accept once; reuse fails closed", async () =
     assert.equal(lookup.status, 200);
     assert.equal(lookup.data.isCreator, false);
 
+    const lookupPost = await json(`${url}/v1/invites/lookup`, {
+      method: "POST",
+      personId: "person_b",
+      body: { token },
+    });
+    assert.equal(lookupPost.status, 200);
+    assert.equal(lookupPost.data.invite.inviteId, lookup.data.invite.inviteId);
+
     const accepted = await json(`${url}/v1/invites/accept`, {
       method: "POST",
       personId: "person_b",

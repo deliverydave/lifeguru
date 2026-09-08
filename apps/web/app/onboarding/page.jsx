@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApi } from "../../lib/use-api";
+import { useApi } from "@/lib/use-api";
 
 export default function OnboardingPage() {
   const { call, auth } = useApi();

@@ -1,7 +1,7 @@
 "use client";
 
 import { SignUp } from "@clerk/nextjs";
-import { clerkEnabled, devAuthBypass } from "../../lib/config";
+import { clerkEnabled, devAuthBypass } from "@/lib/config";
 
 export default function SignUpPage() {
   if (!clerkEnabled()) {

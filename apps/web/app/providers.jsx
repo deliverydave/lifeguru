@@ -1,8 +1,8 @@
 "use client";
 
 import { ClerkProvider } from "@clerk/nextjs";
-import { BypassAuthBridge, ClerkAuthBridge, NoneAuthBridge } from "../lib/auth-context";
-import { clerkEnabled, clerkPublishableKey, devAuthBypass } from "../lib/config";
+import { BypassAuthBridge, ClerkAuthBridge, NoneAuthBridge } from "@/lib/auth-context";
+import { clerkEnabled, clerkPublishableKey, devAuthBypass } from "@/lib/config";
 
 export default function Providers({ children }) {
   if (clerkEnabled()) {

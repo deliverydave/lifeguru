@@ -168,6 +168,15 @@ export function createApp(options = {}) {
     }),
   );
 
+  v1.post(
+    "/invites/lookup",
+    requireDisclaimers,
+    asyncHandler(async (req, res) => {
+      const token = String((req.body && req.body.token) || (req.query && req.query.token) || "");
+      res.json(relationships.lookup(req.personId, token));
+    }),
+  );
+
   v1.get(
     "/invites/lookup",
     requireDisclaimers,

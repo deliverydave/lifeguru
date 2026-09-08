@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback } from "react";
-import { api } from "./api";
-import { useAppAuth } from "./auth-context";
+import { api } from "@/lib/api";
+import { useAppAuth } from "@/lib/auth-context";
 
 export function useApi() {
   const auth = useAppAuth();
