@@ -14,6 +14,21 @@ export default function OnboardingPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  async function continueAfterOnboarding(profile) {
+    const pending = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("m1_invite_token") : null;
+    if (pending) {
+      try {
+        await call("/v1/invites/lookup", { method: "POST", body: { token: pending } });
+        router.replace(`/join?token=${encodeURIComponent(pending)}`);
+        return;
+      } catch {
+        if (typeof sessionStorage !== "undefined") sessionStorage.removeItem("m1_invite_token");
+      }
+    }
+    if (profile && profile.relationship) router.replace("/counselor");
+    else router.replace("/relationship");
+  }
+
   useEffect(() => {
     if (!auth.isLoaded) return;
     if (auth.mode === "none") {
@@ -32,11 +47,7 @@ export default function OnboardingPage() {
         setCatalog(c);
         setMe(m);
         if (m.disclaimers && m.disclaimers.complete) {
-          const pending =
-            typeof sessionStorage !== "undefined" ? sessionStorage.getItem("m1_invite_token") : null;
-          if (pending) router.replace(`/join?token=${encodeURIComponent(pending)}`);
-          else if (m.relationship) router.replace("/counselor");
-          else router.replace("/relationship");
+          await continueAfterOnboarding(m);
         }
       } catch (err) {
         if (!cancelled) setError(err.message || "Could not load disclaimers. Is the API running?");
@@ -63,9 +74,7 @@ export default function OnboardingPage() {
           ],
         },
       });
-      const pending = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("m1_invite_token") : null;
-      if (pending) router.push(`/join?token=${encodeURIComponent(pending)}`);
-      else router.push("/relationship");
+      await continueAfterOnboarding(null);
     } catch (err) {
       setError(err.message || "Could not record acceptances");
     } finally {

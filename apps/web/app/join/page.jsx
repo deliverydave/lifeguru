@@ -15,10 +15,6 @@ function JoinInner() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (token && typeof sessionStorage !== "undefined") sessionStorage.setItem("m1_invite_token", token);
-  }, [token]);
-
-  useEffect(() => {
     if (!auth.isLoaded) return;
     if (auth.mode === "none") {
       router.replace("/setup");
@@ -37,12 +33,18 @@ function JoinInner() {
       try {
         const me = await call("/v1/me");
         if (!me.disclaimers.complete) {
+          if (token && typeof sessionStorage !== "undefined") {
+            sessionStorage.setItem("m1_invite_token", token);
+          }
           router.replace("/onboarding");
           return;
         }
         const looked = await call(`/v1/invites/lookup`, { method: "POST", body: { token } });
-        if (!cancelled) setInfo(looked);
+        if (cancelled) return;
+        if (typeof sessionStorage !== "undefined") sessionStorage.setItem("m1_invite_token", token);
+        setInfo(looked);
       } catch (err) {
+        if (typeof sessionStorage !== "undefined") sessionStorage.removeItem("m1_invite_token");
         if (!cancelled) setError(err.message || "Invite is not valid");
       }
     })();
